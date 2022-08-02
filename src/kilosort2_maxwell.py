@@ -144,7 +144,7 @@ print_stage("STARTING SCRIPT")
 
 # region Import Modules
 import spikeinterface.extractors as se
-import spikeinterface.toolkit as st
+import spikeinterface.preprocessing as sp
 
 import numpy as np
 import matplotlib as mpl
@@ -2697,7 +2697,7 @@ def get_paths(rec_path, inter_path):
 
 
 def filter_recording(rec):
-    return st.preprocessing.bandpass_filter(rec, freq_min=freq_min, freq_max=freq_max)
+    return sp.bandpass_filter(rec, freq_min=freq_min, freq_max=freq_max)
 
 
 def spike_sort(rec_cache, rec_path, output_folder):

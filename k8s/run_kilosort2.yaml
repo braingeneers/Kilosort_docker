@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: sjg-kilosort2
+  name: sjg-kilosort2-
 spec:
   backoffLimit: 0
   template:
@@ -26,7 +26,7 @@ spec:
         command: ["stdbuf", "-i0", "-o0", "-e0", "/usr/bin/time", "-v", "bash", "-c"]
         args:
           - >-
-            ./run.sh s3://braingeneers/ephys/2022-05-12-e-/original/data/Trace_20220512_12_16_00_chip11350.raw.h5
+            ./run.sh s3://braingeneers/ephys/2022-05-03-e-/original/data/Trace_20220503_12_25_42v_chip11350.raw.h5
         env:
           - name: "PYTHONUNBUFFERED"
             value: "true"
@@ -59,15 +59,15 @@ spec:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
             - matchExpressions:
-#              # GPU runs only
-#              - key: gpu-type
-#                operator: In
-#                values:
-#                  - V100
+              # GPU runs only
+              - key: nvidia.com/gpu.product
+                operator: In
+                values:
+                  - NVIDIA-GeForce-GTX-1080-Ti
 #                  - TITANRTX
 #                  - titan-xp
 #                  - M4000
-#                  - 2080Ti
+#                  - V100
 #              - key: gpu-type
 #                operator: NotIn
 #                values:

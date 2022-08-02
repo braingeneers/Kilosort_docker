@@ -5,9 +5,11 @@ DATA_NAME=$(echo ${DATASET} | awk -F '.raw.h5' '{print $1}')
 
 aws --endpoint $ENDPOINT_URL s3 cp $1 /project/SpikeSorting/Trace.raw.h5
 
-python kilosort_presorting.py
+python kilosort2_maxwell.py
 
 cd /project/SpikeSorting/inter/sorted/kilosort2
+aws --endpoint $ENDPOINT_URL s3 cp recording.dat s3://braingeneersdev/cache/${DATA_NAME}/recording.dat
+aws --endpoint $ENDPOINT_URL s3 cp temp_wh.dat s3://braingeneersdev/cache/${DATA_NAME}/temp_wh.dat
 rm *.dat
 zip -0 ${DATA_NAME}_phy.zip *
 
