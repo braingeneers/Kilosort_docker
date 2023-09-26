@@ -21,12 +21,13 @@ RUN apt-get install -y python3\
     python-is-python3
 
 # python packages \
-RUN python -m pip install --force-reinstall 'git+https://github.com/SpikeInterface/spikeinterface.git'
-RUN pip install numpy \
+# RUN python -m pip install --force-reinstall 'git+https://github.com/SpikeInterface/spikeinterface.git'
+RUN pip install spikeinterface==0.94.0
+RUN pip install numpy==1.23.0 \
     pandas \
     matplotlib \
     scipy \
-    sklearn \
+    scikit-learn \
     h5py
 
 #########################################
