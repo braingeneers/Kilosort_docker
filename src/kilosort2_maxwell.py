@@ -13,7 +13,7 @@ Adapted by: Jinghui (Sury) Geng
 
 # List of data files you want to spike sort
 recording_files = [
-    "/project/SpikeSorting/Trace.raw.h5"  # generic name
+    "/project/SpikeSorting/Trace"  # generic name for different data format
 ]
 # List of intermediate folders where tmp and output files are saved
 intermediate_folders = [
@@ -31,9 +31,9 @@ stdln_script = "run_kilosort_compiled.sh"
 # MATLAB runtime directory as required for running the standalone shell script
 runtime_folder = "/usr/local/MATLAB/MATLAB_Runtime/v97"
 
-
-assert len(recording_files) == len(intermediate_folders) == len(matlab_folders), "'recording_files' and 'intermediate_folders' and 'matlab_folders' " \
-                                                                                 "should all have the same length"
+assert len(recording_files) == len(intermediate_folders) == len(
+    matlab_folders), "'recording_files' and 'intermediate_folders' and 'matlab_folders' " \
+                     "should all have the same length"
 
 ######################################################
 ###############  KILOSORT PARAMETERS  ################
@@ -62,6 +62,11 @@ kilosort_params = {
     'n_jobs_bin': 64,
     'trange': [float(0), float('inf')]
 }
+
+######################################################
+###############  RECORDING PARAMETERS  ###############
+######################################################
+data_format = None
 
 ######################################################
 ###############  RECOMPUTE RESULTS?  #################
@@ -119,6 +124,7 @@ max_spikes_per_unit = 500
 # If True, include the electrode number [1, 26400] to the "unit" data structure
 save_electrodes = True
 
+
 ######################################################
 ######################  CODE  ########################
 ######################################################
@@ -149,8 +155,9 @@ import spikeinterface.extractors as se
 import spikeinterface.toolkit as st
 
 import numpy as np
-import matplotlib as mpl
-mpl.use("agg")
+# import matplotlib as mpl
+
+# mpl.use("agg")
 
 import json
 from spikeinterface.extractors import BinaryRecordingExtractor
@@ -168,6 +175,10 @@ from tqdm import tqdm
 from collections import namedtuple
 from scipy.io import savemat
 import pandas as pd
+import pynwb
+import sys
+
+
 # endregion
 
 
@@ -219,10 +230,11 @@ class RunKilosort:
             d = {'warning': 'The recording is not dumpable'}
             rec_file.write_text(json.dumps(d, indent=4), encoding='utf8')
         # endregion
-        input_file_path = output_folder / 'recording.dat'    # CRUCIAL, DO NOT CHANGE!!!
+        input_file_path = output_folder / 'recording.dat'  # CRUCIAL, DO NOT CHANGE!!!
         BinaryRecordingExtractor.write_recording(recording, file_paths=input_file_path,
                                                  dtype='int16', total_memory=kilosort_params["total_memory"],
-                                                 n_jobs=kilosort_params["n_jobs_bin"], verbose=False, progress_bar=verbose)
+                                                 n_jobs=kilosort_params["n_jobs_bin"], verbose=False,
+                                                 progress_bar=verbose)
 
         # region Make substitutions in txt files to set kilosort parameters
         # region Config text
@@ -239,11 +251,11 @@ class RunKilosort:
         ops_dict["fbinary"] = str((output_folder / 'recording.dat').absolute())
         ops_dict["fproc"] = str((output_folder / 'temp_wh.dat').absolute())
         ops_dict["root"] = str(output_folder.absolute())
-        ops_dict["chanMap"] = str((output_folder / 'chanMap.mat').absolute())     
+        ops_dict["chanMap"] = str((output_folder / 'chanMap.mat').absolute())
         ops_dict["fshigh"] = float(kilosort_params['freq_min'])
         ops_dict["minfr_goodchannels"] = float(kilosort_params['minfr_goodchannels'])
         ops_dict["Th"] = list(map(float, kilosort_params['projection_threshold']))
-        ops_dict["lam"] = float(10)     # check if this is a double when read into MATLAB, same after
+        ops_dict["lam"] = float(10)  # check if this is a double when read into MATLAB, same after
         ops_dict["AUCsplit"] = 0.9
         ops_dict["minFR"] = float(kilosort_params['minFR'])
         ops_dict["momentum"] = list(map(float, np.array([20, 400])))
@@ -271,7 +283,8 @@ class RunKilosort:
         chan_dict = {}
         chan_dict["Nchannels"] = float(recording.get_num_channels())
         chan_dict["connected"] = [True] * int(recording.get_num_channels())
-        chan_dict["chanMap"] = list(map(float, np.array(range(int(recording.get_num_channels())))+1))   # MATLAB counts from 1
+        chan_dict["chanMap"] = list(
+            map(float, np.array(range(int(recording.get_num_channels()))) + 1))  # MATLAB counts from 1
         chan_dict["chanMap0ind"] = list(map(float, np.array(range(int(recording.get_num_channels())))))
         chan_dict["xcoords"] = [p[0] for p in positions]
         chan_dict["ycoords"] = [p[1] for p in positions]
@@ -279,7 +292,6 @@ class RunKilosort:
         chan_dict["fs"] = float(recording.get_sampling_frequency())
         savemat(str((output_folder / 'chanMap.mat').absolute()), chan_dict, oned_as='column')
         # endregion
-
 
     def start_sorting(self, output_folder, raise_error, verbose):
         # need setup_recording to be done.
@@ -338,7 +350,7 @@ class RunKilosort:
     @staticmethod
     def execute_kilosort_file(output_folder, verbose):
         print('Running kilosort file')
-         # call the executable's shell script with runtime environment variable and data path
+        # call the executable's shell script with runtime environment variable and data path
         shell_cmd = f'''
                     #!/bin/bash
                     cd "{stdln_folder}"
@@ -417,7 +429,8 @@ class KilosortSortingExtractor:
             have_pd = False
         if not have_pd:
             # Error Message when pandas is not installed
-            raise ImportError("To perform quality metrics and curate the data from Kilosort, install pandas: \n\n pip install pandas\n\n")
+            raise ImportError(
+                "To perform quality metrics and curate the data from Kilosort, install pandas: \n\n pip install pandas\n\n")
         # endregion
 
         # Folder containing the numpy results of Kilosort
@@ -543,6 +556,7 @@ class KilosortSortingExtractor:
         else:
             return spike_train
 
+
 # endregion
 
 
@@ -582,6 +596,7 @@ class WaveformExtractor:
     @property
     def return_scaled(self):
         return self._params['return_scaled']
+
     # endregion
 
     # region Loading saved waveform extractor
@@ -597,6 +612,7 @@ class WaveformExtractor:
                 we._template_cache[mode] = np.load(template_file)
 
         return we
+
     # endregion
 
     # region Creating new waveform extractor
@@ -686,7 +702,8 @@ class WaveformExtractor:
         nafter = self.nafter
 
         selected_spikes = WaveformExtractor.select_random_spikes_uniformly(self.recording, self.sorting,
-                                                         self._params['max_spikes_per_unit'], nbefore, nafter)
+                                                                           self._params['max_spikes_per_unit'], nbefore,
+                                                                           nafter)
 
         # store in a 2 columns (spike_index, segment_index) in a npy file
         for unit_id in self.sorting.unit_ids:
@@ -745,6 +762,7 @@ class WaveformExtractor:
                 sel_spikes.append(inds)
             selected_spikes[unit_id] = sel_spikes
         return selected_spikes
+
     # endregion
 
     # region Quality metrics
@@ -999,7 +1017,7 @@ class WaveformExtractor:
         new_folder.mkdir(parents=True)
 
         # Save unit_ids
-        np.save(new_folder/"unit_ids.npy", np.array(unit_ids))
+        np.save(new_folder / "unit_ids.npy", np.array(unit_ids))
 
         # create and populate waveforms folder
         new_waveforms_folder = new_folder / "waveforms"
@@ -1322,7 +1340,8 @@ class CurationMetrics:
             for segment_index in range(recording.get_num_segments()):
                 length = recording.get_num_frames(segment_index)
                 random_starts = np.random.RandomState(seed=seed).randint(0,
-                                                                         length - chunk_size, size=num_chunks_per_segment)
+                                                                         length - chunk_size,
+                                                                         size=num_chunks_per_segment)
                 for start_frame in random_starts:
                     chunk = recording.get_traces(start_frame=start_frame,
                                                  end_frame=start_frame + chunk_size,
@@ -1336,6 +1355,7 @@ class CurationMetrics:
         med = np.median(random_chunks, axis=0, keepdims=True)
         noise_levels = np.median(np.abs(random_chunks - med), axis=0) / 0.6745
         return noise_levels
+
 
 # endregion
 
@@ -1362,6 +1382,7 @@ class KilosortSortingSegment(BaseSegment):
     """
     A segment of the kilosort output
     """
+
     def __init__(self, all_spikes, all_clusters):
         BaseSegment.__init__(self)
         self._all_spikes = all_spikes
@@ -1374,6 +1395,8 @@ class KilosortSortingSegment(BaseSegment):
         if end_frame is not None:
             spike_times = spike_times[spike_times < end_frame]
         return spike_times.copy().squeeze()
+
+
 # endregion
 
 
@@ -1747,8 +1770,8 @@ class ChunkRecordingExecutor:
 
         self.n_jobs = Utils.ensure_n_jobs(recording, n_jobs=n_jobs)
         self.chunk_size = Utils.ensure_chunk_size(recording,
-                                            total_memory=total_memory, chunk_size=chunk_size,
-                                            chunk_memory=chunk_memory, n_jobs=self.n_jobs)
+                                                  total_memory=total_memory, chunk_size=chunk_size,
+                                                  chunk_memory=chunk_memory, n_jobs=self.n_jobs)
         self.job_name = job_name
 
         if verbose:
@@ -1843,9 +1866,9 @@ class WorkerChunk:
                 # protect from spikes on border :  spike_time<0 or spike_time>seg_size
                 # useful only when max_spikes_per_unit is not None
                 # waveform will not be extracted and a zeros will be left in the memmap file
-                while (spike_times[i0] - nbefore) < 0 and (i0!=i1):
+                while (spike_times[i0] - nbefore) < 0 and (i0 != i1):
                     i0 = i0 + 1
-                while (spike_times[i1-1] + nafter) > seg_size and (i0!=i1):
+                while (spike_times[i1 - 1] + nafter) > seg_size and (i0 != i1):
                     i1 = i1 - 1
 
             if i0 != i1:
@@ -1871,7 +1894,7 @@ class WorkerChunk:
 
     @staticmethod
     def init_worker_waveform_extractor(recording, sorting, wfs_memmap,
-                                        selected_spikes, selected_spike_times, nbefore, nafter, return_scaled):
+                                       selected_spikes, selected_spike_times, nbefore, nafter, return_scaled):
         # create a local dict per worker
         worker_ctx = {}
         worker_ctx['recording'] = recording
@@ -1894,6 +1917,8 @@ class WorkerChunk:
         worker_ctx['unit_cum_sum'] = unit_cum_sum
 
         return worker_ctx
+
+
 global _worker_ctx
 global _func
 
@@ -1903,6 +1928,7 @@ def worker_initializer(func, init_func, init_args):
     _worker_ctx = init_func(*init_args)
     global _func
     _func = func
+
 
 class JobUtils:
     @staticmethod
@@ -1934,6 +1960,7 @@ class JobUtils:
             chunks = list(zip(frame_starts, frame_stops))
 
         return chunks
+
 
 # endregion
 
@@ -2044,12 +2071,12 @@ def _python_exit():
     for t, _ in items:
         t.join()
 
+
 # Controls how many more calls than processes will be queued in the call queue.
 # A smaller number will mean that processes spend more time idle waiting for
 # work while a larger number will make Future.cancel() succeed less frequently
 # (Futures in the call queue cannot be cancelled).
 EXTRA_QUEUED_CALLS = 1
-
 
 # On Windows, WaitForMultipleObjects is used to wait for processes to finish.
 # It can wait on, at most, 63 objects. There is an overhead of two objects:
@@ -2057,13 +2084,16 @@ EXTRA_QUEUED_CALLS = 1
 # - the thread wakeup reader
 _MAX_WINDOWS_WORKERS = 63 - 2
 
+
 # Hack to embed stringification of remote traceback in local traceback
 
 class _RemoteTraceback(Exception):
     def __init__(self, tb):
         self.tb = tb
+
     def __str__(self):
         return self.tb
+
 
 class _ExceptionWithTraceback:
     def __init__(self, exc, tb):
@@ -2071,12 +2101,15 @@ class _ExceptionWithTraceback:
         tb = ''.join(tb)
         self.exc = exc
         self.tb = '\n"""\n%s"""' % tb
+
     def __reduce__(self):
         return _rebuild_exc, (self.exc, self.tb)
+
 
 def _rebuild_exc(exc, tb):
     exc.__cause__ = _RemoteTraceback(tb)
     return exc
+
 
 class _WorkItem(object):
     def __init__(self, future, fn, args, kwargs):
@@ -2085,11 +2118,13 @@ class _WorkItem(object):
         self.args = args
         self.kwargs = kwargs
 
+
 class _ResultItem(object):
     def __init__(self, work_id, exception=None, result=None):
         self.work_id = work_id
         self.exception = exception
         self.result = result
+
 
 class _CallItem(object):
     def __init__(self, work_id, fn, args, kwargs):
@@ -2101,6 +2136,7 @@ class _CallItem(object):
 
 class _SafeQueue(Queue):
     """Safe Queue set exception to the future object linked to a job"""
+
     def __init__(self, max_size=0, *, ctx, pending_work_items):
         self.pending_work_items = pending_work_items
         super().__init__(max_size, ctx=ctx)
@@ -2126,6 +2162,7 @@ def _get_chunks(*iterables, chunksize):
         if not chunk:
             return
         yield chunk
+
 
 def _process_chunk(fn, chunk):
     """ Processes a chunk of an iterable passed to map.
@@ -2460,7 +2497,7 @@ class ProcessPoolExecutor(_base.Executor):
             if max_workers <= 0:
                 raise ValueError("max_workers must be greater than 0")
             elif (sys.platform == 'win32' and
-                max_workers > _MAX_WINDOWS_WORKERS):
+                  max_workers > _MAX_WINDOWS_WORKERS):
                 raise ValueError(
                     f"max_workers must be <= {_MAX_WINDOWS_WORKERS}")
 
@@ -2521,6 +2558,7 @@ class ProcessPoolExecutor(_base.Executor):
                 mp.util.debug('Executor collected: triggering callback for'
                               ' QueueManager wakeup')
                 thread_wakeup.wakeup()
+
             # Start the processes so that their sentinels are known.
             self._adjust_process_count()
             self._queue_management_thread = threading.Thread(
@@ -2563,7 +2601,7 @@ class ProcessPoolExecutor(_base.Executor):
                           DeprecationWarning, stacklevel=2)
         else:
             raise TypeError('submit expected at least 1 positional argument, '
-                            'got %d' % (len(args)-1))
+                            'got %d' % (len(args) - 1))
 
         with self._shutdown_lock:
             if self._broken:
@@ -2585,6 +2623,7 @@ class ProcessPoolExecutor(_base.Executor):
 
             self._start_queue_management_thread()
             return f
+
     # submit.__text_signature__ = _base.Executor.submit.__text_signature__
     # submit.__doc__ = _base.Executor.submit.__doc__
 
@@ -2642,7 +2681,9 @@ class ProcessPoolExecutor(_base.Executor):
 
     shutdown.__doc__ = _base.Executor.shutdown.__doc__
 
+
 atexit.register(_python_exit)
+
 
 # endregion
 
@@ -2657,12 +2698,23 @@ class Stopwatch:
 
 
 def load_recording(rec_path):
+    global rec
     print_stage("LOADING MAXWELL RECORDING")
     try:
         stopwatch = Stopwatch()
-        rec = se.MaxwellRecordingExtractor(rec_path)
-        print("Done loading." + stopwatch.log_time())
-        return rec
+        if data_format not in ["NeurodataWithoutBorders", "Maxwell", "MEArec"]:
+            print(f"Could not load input data because of the data format not one of \
+             ['NeurodataWithoutBorders', 'Maxwell', 'MEArec']")
+            return -1
+        else:
+            if data_format == "NeurodataWithoutBorders":
+                rec = se.NwbRecordingExtractor(rec_path)
+            elif data_format == "Maxwell":
+                rec = se.MaxwellRecordingExtractor(rec_path)
+            elif data_format == "MEArec":
+                rec = se.MEArecRecordingExtractor(rec_path)
+            print("Done loading." + stopwatch.log_time())
+            return rec
     except Exception as e:
         print(f"Could not open the provided file: {rec_path} with the MaxwellRecordingExtractor because of {e}")
         print("Moving on to next recording")
@@ -2727,7 +2779,7 @@ def spike_sort(rec_cache, rec_path, output_folder):
 
 def extract_waveforms(recording, sorting, folder,
                       load_if_exists=False,
-                      precompute_template=('average', ),
+                      precompute_template=('average',),
                       overwrite=False,
                       dtype=None,
                       **job_kwargs):
@@ -2897,6 +2949,45 @@ def main():
         print("\n\n")
 
 
+# # s3 data functions
+# def get_metadata_path(data_path):
+#     # TODO: get metadata from integrated recordings
+#     try:
+#         for tp in ["original", "shared"]:
+#             if tp in data_path:
+#                 s3_base = data_path.split(tp)[0]
+#                 metadata_path = os.path.join(s3_base, "metadata.json")
+#                 return metadata_path
+#     except Exception as err:
+#         print(err)
+#
+#
+# def get_dataformat(data_path):
+#     import braingeneers.utils.smart_open_braingeneers as smart_open
+#     metadata_path = get_metadata_path(data_path)
+#     experiment = data_path.split("/")[-1]
+#     for ext in [".raw.h5", ".nwb"]:
+#         if experiment.endswith(ext):
+#             experiment = experiment.split(ext)[0]
+#     with smart_open.open(metadata_path, 'r') as f:
+#         metadata = json.load(f)
+#         assert (experiment in metadata["ephys_experiments"]) and \
+#                ("data_format" in metadata["ephys_experiments"][experiment]), \
+#             "Update metadata.json to the newest version!"
+#         dft = metadata["ephys_experiments"][experiment]["data_format"]
+#         return dft
+
+
 if __name__ == "__main__":
+    # get data format
+    experiment = sys.argv[1]
+    metadata_path = "/project/SpikeSorting/metadata.json"
+    with open(metadata_path, 'r') as f:
+        metadata = json.load(f)
+    assert (experiment in metadata["ephys_experiments"]) and \
+           ("data_format" in metadata["ephys_experiments"][experiment]), \
+        "Update metadata.json to the newest version!"
+    data_format = metadata["ephys_experiments"][experiment]["data_format"]
+    # run main function
     main()
 # endregion

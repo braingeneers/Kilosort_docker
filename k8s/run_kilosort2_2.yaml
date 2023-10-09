@@ -1,14 +1,14 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: sjg-kilosort2-ion-4
+  name: sjg-kilosort2-nwb
 spec:
-  backoffLimit: 0
+  backoffLimit: 2
   template:
     spec:
       containers:
       - name: container
-        image: surygeng/kilosort2:0.1
+        image: surygeng/kilosort_docker:v0.3
         imagePullPolicy: Always
         resources:
 
@@ -18,7 +18,7 @@ spec:
             memory: "32Gi"
             ephemeral-storage: "300Gi"
           limits:
-            cpu: "12"
+            cpu: "16"
             memory: "32Gi"
             ephemeral-storage: "400Gi"
             nvidia.com/gpu: 1
@@ -26,7 +26,7 @@ spec:
         command: ["stdbuf", "-i0", "-o0", "-e0", "/usr/bin/time", "-v", "bash", "-c"]
         args:
           - >-
-            ./run.sh s3://braingeneers/ephys/2023-07-10-e-ionpump-test/original/data/Trace_20230710_12_12_50_ionpump3.raw.h5
+            ./run.sh s3://braingeneers/ephys/2023-04-02-e-hc328_unperturbed/shared/hc3.28_hckcr1_chip16835_plated34.2_rec4.2.nwb
         env:
           - name: "PYTHONUNBUFFERED"
             value: "true"
