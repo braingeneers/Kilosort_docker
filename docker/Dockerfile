@@ -46,5 +46,5 @@ WORKDIR /project/src
 ENV ENDPOINT_URL="https://braingeneers.gi.ucsc.edu"
 ENV PATH="/usr/local/nvidia/bin:/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:."
 
-# container name: kilosort_docker:v0.3
+# container name: kilosort_docker:v0.2
 # test file: s3://braingeneers/ephys/2023-04-02-e-hc328_unperturbed/shared/hc3.28_hckcr1_chip16835_plated34.2_rec4.2.nwb
