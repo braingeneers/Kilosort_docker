@@ -43,7 +43,7 @@ RUN mkdir -p /project/SpikeSorting/inter/sorted/kilosort2
 WORKDIR /project/src
 
 # PRP setup
-ENV ENDPOINT_URL="https://braingeneers.gi.ucsc.edu"
+ENV ENDPOINT_URL="https://s3.braingeneers.gi.ucsc.edu"
 ENV PATH="/usr/local/nvidia/bin:/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:."
 
 # container name: kilosort_docker:v0.2

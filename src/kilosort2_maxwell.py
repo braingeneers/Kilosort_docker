@@ -2982,12 +2982,17 @@ if __name__ == "__main__":
     # get data format
     experiment = sys.argv[1]
     metadata_path = "/project/SpikeSorting/metadata.json"
-    with open(metadata_path, 'r') as f:
-        metadata = json.load(f)
-    assert (experiment in metadata["ephys_experiments"]) and \
-           ("data_format" in metadata["ephys_experiments"][experiment]), \
-        "Update metadata.json to the newest version!"
-    data_format = metadata["ephys_experiments"][experiment]["data_format"]
+    if os.path.isfile(metadata_path):
+        with open(metadata_path, 'r') as f:
+            metadata = json.load(f)
+            # assert (experiment in metadata["ephys_experiments"]) and \
+            #        ("data_format" in metadata["ephys_experiments"][experiment]), \
+            #     "Update metadata.json to the newest version!"
+            if (experiment in metadata["ephys_experiments"]) and \
+                   ("data_format" in metadata["ephys_experiments"][experiment]):
+                data_format = metadata["ephys_experiments"][experiment]["data_format"]
+    if not data_format:
+        data_format = "Maxwell"        # a patch for the old metadata.json
     # run main function
     main()
 # endregion
