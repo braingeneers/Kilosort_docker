@@ -8,7 +8,7 @@ spec:
     spec:
       containers:
       - name: container
-        image: localhost:30081/surygeng/kilosort_docker:latest
+        image: surygeng/kilosort_docker:v0.2
         imagePullPolicy: Always
         resources:
 
@@ -26,7 +26,7 @@ spec:
         command: ["stdbuf", "-i0", "-o0", "-e0", "/usr/bin/time", "-v", "bash", "-c"]
         args:
           - >-
-            ./run.sh s3://braingeneers/ephys/2023-05-10-e-hc52_18790_unperturbed/original/data/hc5.2_chip18790_baseline_rec5.10.23.raw.h5
+            ./run.sh s3://braingeneers/ephys/2023-10-12-e-pm/original/data/Trace_7month_2953_pm.raw.h5
         env:
           - name: "PYTHONUNBUFFERED"
             value: "true"

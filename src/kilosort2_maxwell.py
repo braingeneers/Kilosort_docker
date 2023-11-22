@@ -189,6 +189,11 @@ class RunKilosort:
         # Set paths
         self.path = self.set_kilosort_path(kilosort_path)
         os.environ['HDF5_PLUGIN_PATH'] = hdf5_plugin_path
+        # copy the plugin to "/usr/local/hdf5/lib/plugin" to make sure this file can be found by the script
+        path_to_lib = os.path.join(hdf5_plugin_path, "libcompression.so")
+        if os.path.isfile(path_to_lib):
+            os.makedirs("/usr/local/hdf5/lib/plugin/")
+            shutil.copy(path_to_lib, "/usr/local/hdf5/lib/plugin/libcompression.so")
 
         # Check if kilosort is installed
         if not self.check_if_installed():
